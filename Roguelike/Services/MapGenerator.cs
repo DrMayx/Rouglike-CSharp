@@ -2,146 +2,140 @@
 using System.Collections.Generic;
 using Roguelike.Models;
 using Roguelike.Controllers;
+using Roguelike.Models.Tiles;
 
 namespace Roguelike.Services
 {
     class MapGenerator
     {
         private static List<char> characters = GenerateProbabilityList();
-        private static char[][] map;
         private static Random random = new Random();
+        private static bool nextMapTileGenerated;
 
-        public static char[][] GenerateMap()
+        public static void GenerateMap()
         {
-            bool nextMapTileGenerated = false;
-            CreateMap();
-            for (int y = 1; y < map.Length-1; y++)
+            nextMapTileGenerated = false;
+            Map.CreateMap();
+            Map.MapTiles[1][1] = Game.PlayerRef;
+            Game.PlayerRef.Position = Constants.PlayerStartingPosition;
+            for (int y = 1; y < Map.MapTiles.Length-1; y++)
             {
-                map[y][0] = Constants.UnbreakableWallChar;
-                for (int x = 1; x < map[y].Length-2; x++)
+                Map.MapTiles[y][0] = new UnbreakableWallTile(new Position(0,y));
+                for (int x = 1; x < Map.MapTiles[y].Length-2; x++)
                 {
                     if(y == 1 && x == 1)
                     {
                         continue;
                     }
-                    SetCharacter(x,y);
-
-                    switch (map[y][x])
-                    {
-                        case Constants.TreasureLeftChar:
-                            if (x < map[y].Length - 3 || (y == 1 && x == 1))
-                            {
-                                TreasureChest.TreasureChests.Add(new TreasureChest(x, x + 1, y));
-                                x += 1;
-                                map[y][x] = Constants.TreasureRightChar;
-                            }
-                            else
-                            {
-                                x -= 1;
-                            }
-                            break;
-                        case Constants.MonsterChar:
-                            int strength = new Random().Next(1, 3);
-                            Monster.monsters.Add(new Monster(strength == 1 ? MonsterType.Weak : MonsterType.Medium, new Position(x, y)));
-                            break;
-                        case Constants.MonsterStrongChar:
-                            Monster.monsters.Add(new Monster(MonsterType.Strong, new Position(x, y)));
-                            break;
-                        case Constants.BonusLifeChar:
-                            new BonusLife(new Random().Next(1, 6), new Position(x,y));
-                            break;
-                        case Constants.NextLevelChar:
-                            if (nextMapTileGenerated)
-                            {
-                                x -= 1;
-                            }
-                            else
-                            {
-                                nextMapTileGenerated = true;
-                            }
-                            break;
-
-                    }
+                    SetTile(ref x, y);
                 }
-                map[y][map[y].Length - 2] = Constants.UnbreakableWallChar;
-                map[y][map[y].Length - 1] = Constants.NewLine;
+                Map.MapTiles[y][Map.MapTiles[y].Length - 2] = new UnbreakableWallTile(new Position(y, Map.MapTiles[y].Length - 2));
+                Map.MapTiles[y][Map.MapTiles[y].Length - 1] = new EmptyNewLineTile();
             }
 
             if (!nextMapTileGenerated)
             {
-                int y = map.Length - 2;
-                int x = map[0].Length - 3;
+                int y = Map.MapTiles.Length - 2;
+                int x = Map.MapTiles[0].Length - 3;
                 Position pos = new Position(x, y);
-                switch (map[y][x])
+
+                if(Map.MapTiles[y][x] is TreasureChestTile)
                 {
-                    case Constants.TreasureRightChar:
-                    case Constants.OpenedChestRightChar:
-                        // handle chest substitution
-                        TreasureChest chest = TreasureChest.TreasureChests.Find(treasure => treasure.ChestRight == pos);
-                        if(chest != null)
-                        {
-                            map[y][chest.ChestLeft.X] = Constants.FreeSpaceChar;
-                            map[y][chest.ChestRight.X] = Constants.NextLevelChar;
-                            TreasureChest.TreasureChests.Remove(chest);
-                        }
-                        break;
-                    case Constants.MonsterChar:
-                    case Constants.MonsterStrongChar:
-                        // handle monster substitution
-                        Monster enemy = Monster.monsters.Find(monster => monster.position.X == x);
-                        if (enemy != null)
-                        {
-                            map[y][x] = Constants.FreeSpaceChar;
-                            map[y][x] = Constants.NextLevelChar;
-                            Monster.monsters.Remove(enemy);
-                        }
-                        break;
-                    case Constants.BonusLifeChar:
-                        // handle bonus life substitution
-                        BonusLife bonus = BonusLife.Bonuses.Find(b => b.Position == pos);
-                        if(bonus != null)
-                        {
-                            map[y][x] = Constants.NextLevelChar;
-                            BonusLife.Bonuses.Remove(bonus);
-                        }
-                        break;
-                    default:
-                        map[y][x] = Constants.NextLevelChar;
-                        break;
+                    TreasureChestTile chest = TreasureChestTile.TreasureChests.Find(treasure => treasure.ChestRight == pos);
+                    if (chest != null)
+                    {
+                        Map.MapTiles[y][chest.ChestLeft.X] = new EmptySpaceTile();
+                        Map.MapTiles[y][chest.ChestRight.X] = new NextLevelTile(pos);
+                        TreasureChestTile.TreasureChests.Remove(chest);
+                    }
+                }
+                else if(Map.MapTiles[y][x] is AbstractMonster)
+                {
+                    AbstractMonster enemy = AbstractMonster.Monsters.Find(monster => monster.Position.X == x);
+                    if (enemy != null)
+                    {
+                        Map.MapTiles[y][x] = new NextLevelTile(pos);
+                        AbstractMonster.Monsters.Remove(enemy);
+                    }
+                }else if(Map.MapTiles[y][x] is BonusLifeTile)
+                {
+                    BonusLifeTile bonus = BonusLifeTile.Bonuses.Find(b => b.Position == pos);
+                    if (bonus != null)
+                    {
+                        Map.MapTiles[y][x] = new NextLevelTile(pos);
+
+                        BonusLifeTile.Bonuses.Remove(bonus);
+                    }
+                }
+                else
+                {
+                    Map.MapTiles[y][x] = new NextLevelTile(pos);
                 }
             }
-            Monster.Start();
-            return map;
+            MonsterController.Start();
         }
 
-        private static void AddFullWall()
+        private static void SetTile(ref int x, int y)
         {
-            for (int i = 0; i < map[0].Length-1; i++)
-            {
-                map[0][i] = Constants.UnbreakableWallChar;
-            }
-            map[0][map[0].Length -1] = Constants.NewLine;
+            char currentCharacter = characters[random.Next(0, characters.Count)];
 
-            for (int i = 0; i < map[0].Length - 1; i++)
+            ITile tile = null;
+            Position position = new Position(x, y);
+            switch (currentCharacter)
             {
-                map[map.Length-1][i] = Constants.UnbreakableWallChar;
+                case Constants.TreasureLeftChar:
+                    if (x < Map.MapTiles[y].Length - 3 || (y == 1 && x == 1))
+                    {
+                        tile = new TreasureChestTile(x, x + 1, y);
+                        Map.MapTiles[y][x] = tile;
+                        Map.MapTiles[y][x + 1] = tile;
+                        x += 1;
+                        return;
+                    }
+                    else
+                    {
+                        x -= 1;
+                        return;
+                    }
+                case Constants.MonsterChar:
+                    int power = new Random().Next(1, 4);
+                    if (power == 2) {
+                        tile = new MonsterMediumTile(power, position);
+                    }
+                    else
+                    {
+                        tile = new MonsterWeakTile(1, position);
+                    }
+                    break;
+                case Constants.MonsterStrongChar:
+                    tile = new MonsterStrongTile(3, position);
+                    break;
+                case Constants.BonusLifeChar:
+                    tile = new BonusLifeTile(new Random().Next(1, 6), position);
+                    break;
+                case Constants.NextLevelChar:
+                    if (nextMapTileGenerated)
+                    {
+                        x -= 1;
+                        return;
+                    }
+                    else
+                    {
+                        tile = new NextLevelTile(position);
+                        nextMapTileGenerated = true;
+                    }
+                    break;
+                case Constants.FreeSpaceChar:
+                    tile = new EmptySpaceTile();
+                    break;
+                case Constants.WallChar:
+                    tile = new WallTile(position);
+                    break;
+                case Constants.UnbreakableWallChar:
+                    tile = new UnbreakableWallTile(position);
+                    break;
             }
-            map[map.Length-1][map[0].Length - 1] = Constants.NewLine;
-        }
-
-        private static void SetCharacter(int x, int y)
-        {
-            map[y][x] = characters[random.Next(0, characters.Count)];
-        }
-
-        private static void CreateMap()
-        {
-            map = new char[Constants.MapHeight][];
-            for(int i = 0; i < map.Length; i++)
-            {
-                map[i] = new char[Constants.MapWidth];
-            }
-            AddFullWall();
+            Map.MapTiles[y][x] = tile;
         }
 
         private static List<char> GenerateProbabilityList()

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Roguelike.Models;
+using System;
 
 namespace Roguelike
 {
@@ -6,17 +7,15 @@ namespace Roguelike
     {
         // Display settings
         public const int RightMargin = 26;
-        public const int MapWidth = 50;
+        public const int MapWidth = 49;
         public const int MapHeight = 22;
 
-        /*
+        //Player starting position
+        public static readonly Position PlayerStartingPosition = new Position(1, 1);
 
-            Constants.MonsterChar, Constants.MonsterChar,
-            Constants.MonsterStrongChar,
-            Constants.BonusLifeChar,
-            Constants.NextLevelChar
-             */
-
+        // Treasure limiters
+        public const int MaxTreasureAmount = 50;
+        public const int MinTreasureAmount = 1;
 
         // Probabilitors
         public const int MosterDamageChanceProbablitor = 5;

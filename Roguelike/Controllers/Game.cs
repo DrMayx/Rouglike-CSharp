@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using Roguelike.Models;
+using Roguelike.Models.Tiles;
 using Roguelike.Services;
 
 namespace Roguelike.Controllers
@@ -10,11 +11,10 @@ namespace Roguelike.Controllers
         public delegate void GameHandler();
         public event GameHandler GameFinished;
 
-        public static Player PlayerRef;
+        public static PlayerTile PlayerRef;
         private Thread GameThread;
         private InputListener inputListener;
         public volatile bool isPlaying;
-        public static char[][] Map;
         private Movement movement;
         private bool isAttacking;
         public static bool IsError;
@@ -23,7 +23,7 @@ namespace Roguelike.Controllers
         private int _lines = 0;
         public static Game Instance;
 
-        public Game(Player player)
+        public Game(PlayerTile player)
         {
             PlayerRef = player;
             Instance = this;
@@ -40,13 +40,11 @@ namespace Roguelike.Controllers
         private void Start()
         {
             _hasMoved = false;
-            Map = MapGenerator.GenerateMap();
+            MapGenerator.GenerateMap();
             inputListener.ButtonClicked += OnButtonClicked;
             inputListener.StartListening();
             PlayerRef.PlayerDied += OnPlayerDied;
-            movement = new Movement(ref Map);
-            movement.MapReloaded += OnMapReloaded;
-            PutPlayerOnMap();
+            movement = new Movement();
             isPlaying = true;
             GameMessage.NewMessageOccured += OnNewMessageOccured;
 
@@ -59,25 +57,17 @@ namespace Roguelike.Controllers
             }
         }
 
-        public void OnMapReloaded(char[][] map)
-        {
-            Map = map;
-            this.movement = new Movement(ref Map);
-            this.movement.MapReloaded += OnMapReloaded;
-            PutPlayerOnMap();
-        }
-
         public void ShowMap()
         {
             if (!isPlaying) { return; }
             Console.Clear();
-            for (int rowIdx = 0; rowIdx < Map.Length; rowIdx++)
+            for (int rowIdx = 0; rowIdx < Map.MapTiles.Length; rowIdx++)
             {
-                for(int colIdx = 0; colIdx < Map[rowIdx].Length; colIdx++)
+                for(int colIdx = 0; colIdx < Map.MapTiles[rowIdx].Length; colIdx++)
                 {
                     try
                     {
-                        if (colIdx == Map[rowIdx].Length-1)
+                        if (colIdx == Map.MapTiles[rowIdx].Length-1)
                         {
                             PrintUI(rowIdx);
                         }
@@ -107,46 +97,16 @@ namespace Roguelike.Controllers
 
         private void DrawCharacter(int rowIdx, int colIdx)
         {
-            if (Map[rowIdx][colIdx] == Constants.MonsterChar || Map[rowIdx][colIdx] == Constants.MonsterStrongChar)
+            if (Map.MapTiles[rowIdx][colIdx] == null)
             {
-                Monster monster = null;
-                try
-                {
-                    monster = Monster.monsters.Find(item => item.position == new Position(colIdx, rowIdx));
-                }
-                catch (ArgumentNullException)
-                {
-                    // ...
-                }
-                if(monster != null)
-                {
-                    switch (monster.Type)
-                    {
-                        case MonsterType.Weak:
-                            Console.ForegroundColor = Constants.WeakMonsterColor;
-                            break;
-                        case MonsterType.Medium:
-                        case MonsterType.Strong:
-                            Console.ForegroundColor = Constants.StrongMonsterColor;
-                            break;
-                    }
-                }
+                Console.BackgroundColor = ConsoleColor.White;
+                Console.Write("-");
+                Console.ResetColor();
             }
-
-            else if(Map[rowIdx][colIdx] == Constants.PlayerChar)
+            else
             {
-                Console.ForegroundColor = Constants.PlayerColor;
+                Map.MapTiles[rowIdx][colIdx].DrawCharacter();
             }
-            else if(Map[rowIdx][colIdx] == Constants.BonusLifeChar)
-            {
-                Console.ForegroundColor = Constants.BonusLifeColor;
-            }
-            else if(Map[rowIdx][colIdx] == Constants.NextLevelChar)
-            {
-                Console.ForegroundColor = Constants.NextLevelTileColor;
-            }
-            Console.Write(Map[rowIdx][colIdx]);
-            Console.ResetColor();
         }
 
         private void PrintUI(int rowIdx)
@@ -187,11 +147,6 @@ namespace Roguelike.Controllers
             }
         }
 
-        public void PutPlayerOnMap()
-        {
-            Map[1][1] = Constants.PlayerChar;
-        }
-
         public void OnPlayerDied()
         {
             Console.Clear();
@@ -215,7 +170,7 @@ namespace Roguelike.Controllers
                 GameFinished?.Invoke();
                 inputListener.StopListening();
                 GameThread.Interrupt();
-                Monster.RefreshingEnabled = false;
+                MonsterController.RefreshingEnabled = false;
                 return;
             }
             switch (button.Key)
@@ -276,7 +231,7 @@ namespace Roguelike.Controllers
             Console.WriteLine("Press any key to continue...");
             inputListener.StopListening();
             isPlaying = false;
-            Monster.ClearMonsters();
+            MonsterController.ClearMonsters();
             Console.ReadKey();
             GameFinished?.Invoke();
             GameThread.Interrupt();

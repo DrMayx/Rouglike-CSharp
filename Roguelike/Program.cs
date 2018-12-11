@@ -15,7 +15,8 @@ using Roguelike.Models;
 // przerwa 4:41 - 4:45                  // Added GameMessage; Fix error with thread disappearing on game exit
 // przerwa 6:25 - 23.11.2018 3:30       // Added not yet well working monster attacking player on sight; Added game finishing on players death
 // przerwa 4:00 - 5:20                  // Fixed monster attack on sight, added bonus lifes providing additional lives through the gameplay
-// przerwa 5:25 -                       // Added messages on monster hit, on treasure chest open and on bonus life picked up
+// przerwa 5:25 - 13:00                 // Added messages on monster hit, on treasure chest open and on bonus life picked up
+// przerwa 19:00 -                      // REFACTOR - whole game made to use tiles instead if characters
 namespace Roguelike
 {
     class Program
@@ -35,7 +36,7 @@ namespace Roguelike
         #endregion
 
         private static Game game = null;
-        private static Player player = null;
+        private static PlayerTile player = null;
 
         static void Main(string[] args)
         {
@@ -85,7 +86,7 @@ namespace Roguelike
                 switch (Console.ReadKey().Key)
                 {
                     case ConsoleKey.D1:
-                        player = new Player();
+                        player = PlayerTile.CreateNewPlayer();
                         return true;
                     case ConsoleKey.D2:
                         if(continueCondition)

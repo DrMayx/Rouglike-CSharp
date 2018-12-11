@@ -1,73 +1,53 @@
 ﻿using System;
 using Roguelike.Models;
+using Roguelike.Models.Tiles;
 using Roguelike.Services;
 
 namespace Roguelike.Controllers
 {
     public class Movement
     {
-        public delegate void MapChanger(char[][] map);
-        public event MapChanger MapReloaded;
-
-
-        private char[][] _map;
-        private Position _playerPosition;
-        public Movement(ref char[][] map)
-        {
-            this._map = map;
-            this._playerPosition = new Position(1, 1);
-        }
-
         public void Move(int x, int y)
         {
-            int xPos = this._playerPosition.X + x;
-            int yPos = this._playerPosition.Y + y;
+            int xPos = Game.PlayerRef.Position.X + x;
+            int yPos = Game.PlayerRef.Position.Y + y;
             Position pos = new Position(xPos, yPos);
 
             if (PositionIsValid(xPos,yPos))
             {
-                if (this._map[yPos][xPos] == Constants.TreasureLeftChar)
+                if (Map.MapTiles[yPos][xPos] is TreasureChestTile)
                 {
-                    TreasureChest chest = TreasureChest.TreasureChests.Find(item => item.ChestLeft == pos);
-                    Game.PlayerRef.Score += chest.Treasure;
-                    this._map[yPos][xPos] = Constants.OpenedChestLeftChar;
-                    this._map[yPos][xPos + 1] = Constants.OpenedChestRightChar;
-                    string properPointsString = chest.Treasure == 1 ? "point" : "points";
-                    GameMessage.SendMessage("INFO : You picked up " + chest.Treasure + " bonus " + properPointsString);
+                    TreasureChestTile chest = TreasureChestTile.TreasureChests.Find(item => item.ChestRight == pos || item.ChestLeft == pos);
+                    if (chest != null && chest.IsOpened)
+                    {
+                        chest.Touch();
+                    }
+                    chest.Interact(pos);
                 }
-                else if (this._map[yPos][xPos] == Constants.TreasureRightChar)
-                {
-                    TreasureChest chest = TreasureChest.TreasureChests.Find(item => item.ChestRight == pos);
-                    Game.PlayerRef.Score += chest.Treasure;
-                    this._map[yPos][xPos] = Constants.OpenedChestRightChar;
-                    this._map[yPos][xPos - 1] = Constants.OpenedChestLeftChar;
-                    string properPointsString = chest.Treasure == 1 ? "point" : "points";
-                    GameMessage.SendMessage("INFO : You picked up " + chest.Treasure + " bonus " + properPointsString);
-                }
-                else if (this._map[yPos][xPos] == Constants.NextLevelChar)
+                else if (Map.MapTiles[yPos][xPos] is NextLevelTile)
                 {
                     LoadNewMap();
                 }
                 else
                 {
-                    if (this._map[yPos][xPos] == Constants.BonusLifeChar)
+                    if (Map.MapTiles[yPos][xPos] is BonusLifeTile)
                     {
-                        Position futurePos = new Position(xPos, yPos);
-                        BonusLife bonus = BonusLife.Bonuses.Find(b => b.Position == futurePos);
-                        Game.PlayerRef.Lifes += bonus.Value;
-                        string properLifeString = bonus.Value == 1 ? "life" : "lifes";
-                        GameMessage.SendMessage("INFO : You picked up " + bonus.Value + " bonus " + properLifeString);
+                        Position futurePos = new Position(pos.X, pos.Y);
+                        BonusLifeTile bonus = BonusLifeTile.Bonuses.Find(b => b.Position == futurePos);
+                        bonus.Interact(pos);
                     }
-                    this._map[yPos][xPos] = Constants.PlayerChar;
-                    this._map[this._playerPosition.Y][this._playerPosition.X] = Constants.FreeSpaceChar;
-                    this._playerPosition.X += x;
-                    this._playerPosition.Y += y;
+                    Map.MapTiles[yPos][xPos] = Game.PlayerRef;
+                    Map.MapTiles[Game.PlayerRef.Position.Y][Game.PlayerRef.Position.X] = new EmptySpaceTile();
+                    Game.PlayerRef.Position.X += x;
+                    Game.PlayerRef.Position.Y += y;
                 }
             }
             else
             {
-                string itemName = GetItemName(yPos,xPos);
-                GameMessage.SendMessage($"INFO: You touched {itemName}");
+                if(Map.MapTiles[yPos][xPos] is ITouchable)
+                {
+                    ((ITouchable)Map.MapTiles[yPos][xPos]).Touch();
+                }
             }
 
             MonsterAttackOnPlayerProximity(yPos, xPos);
@@ -75,9 +55,9 @@ namespace Roguelike.Controllers
 
         private void LoadNewMap()
         {
-            Monster.ClearMonsters();
-            this._map = MapGenerator.GenerateMap();
-            MapReloaded?.Invoke(this._map);
+            MonsterController.ClearMonsters();
+            MapGenerator.GenerateMap();
+
         }
 
         private void MonsterAttackOnPlayerProximity(int y, int x)
@@ -94,12 +74,12 @@ namespace Roguelike.Controllers
                 new Position(1, 0),
             };
 
-            Monster monster = null;
+            AbstractMonster monster = null;
             foreach(Position p in positionsToCheck)
             {
                 try
                 {
-                    monster = Monster.monsters.Find(m => m.position + p == this._playerPosition);
+                    monster = AbstractMonster.Monsters.Find(m => m.Position + p == Game.PlayerRef.Position);
                     if(monster != null)
                     {
                         break;
@@ -117,93 +97,62 @@ namespace Roguelike.Controllers
                 return;
             }
 
-            if (monster.Type == MonsterType.Weak || monster.Type == MonsterType.Medium)
+            if (monster is MonsterMediumTile || monster is MonsterWeakTile)
             {
-                if(monster.position + positionsToCheck[0] == this._playerPosition
-                    || monster.position + positionsToCheck[1] == this._playerPosition
-                    || monster.position + positionsToCheck[2] == this._playerPosition 
-                    || monster.position + positionsToCheck[3] == this._playerPosition)
+                if(monster.Position + positionsToCheck[0] == Game.PlayerRef.Position
+                    || monster.Position + positionsToCheck[1] == Game.PlayerRef.Position
+                    || monster.Position + positionsToCheck[2] == Game.PlayerRef.Position 
+                    || monster.Position + positionsToCheck[3] == Game.PlayerRef.Position)
                 {
                     return;
                 }
             }
 
-            int monsterDamage = (int)monster.Type;
+            int monsterDamage = monster.Power;
 
             // weak = 25% chance     -||    range is {0,1,2,3}  ]
             // medium = 33% chance   -||    range is {0,1,2}    ]---- condition is only true for 0
             // strong = 50% chance   -\/    range is {0,1}      ]
             int damage = new Random().Next(0, Constants.MosterDamageChanceProbablitor - monsterDamage);
+            string monsterType = monster is MonsterWeakTile ? "Weak" : monster is MonsterMediumTile ? "Medium" : "Strong";
             if (damage % Constants.MosterDamageChanceProbablitor == 0)
             {
-                GameMessage.SendMessage("ATTACKED! : " + monster.Type + " monster hit you and\ncaused " + monsterDamage + " damage to You!");
+                GameMessage.SendMessage($"ATTACKED! : {monsterType} monster hit you and\ncaused {monsterDamage} damage to You!");
                 Game.PlayerRef.ApplyDamage(monsterDamage);
-            }
-        }
-
-        private string GetItemName(int y, int x)
-        {
-            switch (this._map[y][x])
-            {
-                case Constants.MonsterChar:
-                case Constants.MonsterStrongChar:
-                    return "Monster";
-                case Constants.OpenedChestLeftChar:
-                case Constants.OpenedChestRightChar:
-                    return "Opened chest";
-                case Constants.TreasureLeftChar:
-                case Constants.TreasureRightChar:
-                    return "Closed chest";
-                case Constants.UnbreakableWallChar:
-                    return "Unbreakable wall";
-                case Constants.WallChar:
-                    return "Wall";
-                default:
-                    return "Undefined";
             }
         }
 
         private bool PositionIsValid(int xPos, int yPos)
         {
-            return this._map[yPos][xPos] != Constants.WallChar
-                && this._map[yPos][xPos] != Constants.UnbreakableWallChar
-                && this._map[yPos][xPos] != Constants.OpenedChestLeftChar
-                && this._map[yPos][xPos] != Constants.OpenedChestRightChar
-                && this._map[yPos][xPos] != Constants.MonsterStrongChar
-                && this._map[yPos][xPos] != Constants.MonsterChar;
+            return !(Map.MapTiles[yPos][xPos] is WallTile)
+                && !(Map.MapTiles[yPos][xPos] is UnbreakableWallTile)
+                && !(Map.MapTiles[yPos][xPos] is AbstractMonster);
         }
 
         public void Attack(int x, int y)
         {
-            int yPos = this._playerPosition.Y + y;
-            int xPos = this._playerPosition.X + x;
+            int yPos = Game.PlayerRef.Position.Y + y;
+            int xPos = Game.PlayerRef.Position.X + x;
 
-            switch (this._map[yPos][xPos])
+            if(Map.MapTiles[yPos][xPos] is EmptySpaceTile)
             {
-                case Constants.FreeSpaceChar:
-                    break;
-                case Constants.WallChar:
-                    this._map[yPos][xPos] = Constants.FreeSpaceChar;
-                    Game.PlayerRef.Score += 1;
-                    break;
-                case Constants.MonsterChar:
-                case Constants.MonsterStrongChar:
-                    Monster monster = null;
-                    Position attackPos = this._playerPosition + new Position(x, y);
-                    try
-                    {
-                        monster = Monster.monsters.Find(item => item.position == attackPos);
-                    }
-                    catch (ArgumentNullException)
-                    {
-                        // swallow it.. will be checked in next if ... thou it shouldnt happen theoritically
-                    }
-                    if(monster != null)
-                    {
-                        Player.Attack(attackPos);
-                    }
-                    MonsterAttackOnPlayerProximity(yPos, xPos);
-                    break;
+                return;
+            }
+            else if(Map.MapTiles[yPos][xPos] is WallTile)
+            {
+                Map.MapTiles[yPos][xPos] = new EmptySpaceTile();
+                Game.PlayerRef.Score += 1;
+            }
+            else if(Map.MapTiles[yPos][xPos] is AbstractMonster)
+            {
+                AbstractMonster monster = null;
+                Position attackPos = Game.PlayerRef.Position + new Position(x, y);
+                monster = AbstractMonster.Monsters.Find(item => item.Position == attackPos);
+                if (monster != null)
+                {
+                    Game.PlayerRef.Attack(attackPos);
+                }
+                MonsterAttackOnPlayerProximity(yPos, xPos);
             }
         }
     }
