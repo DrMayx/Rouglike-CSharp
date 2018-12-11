@@ -20,7 +20,7 @@ using Roguelike.Models;
 namespace Roguelike
 {
     class Program
-    {
+    {   
         #region Some data for window unresizability
         private const int MF_BYCOMMAND = 0x00000000;
         public const int SC_SIZE = 0xF000;
