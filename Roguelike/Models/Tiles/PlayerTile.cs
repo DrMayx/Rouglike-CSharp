@@ -27,10 +27,7 @@ namespace Roguelike.Models
 
         public static PlayerTile CreateNewPlayer()
         {
-            if(Instance == null)
-            {
-                Instance = new PlayerTile();
-            }
+            Instance = new PlayerTile();
             return Instance;
         }
 

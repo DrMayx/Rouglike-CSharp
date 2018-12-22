@@ -17,6 +17,7 @@ using Roguelike.Models;
 // przerwa 4:00 - 5:20                  // Fixed monster attack on sight, added bonus lifes providing additional lives through the gameplay
 // przerwa 5:25 - 13:00                 // Added messages on monster hit, on treasure chest open and on bonus life picked up
 // przerwa 19:00 -                      // REFACTOR - whole game made to use tiles instead if characters
+
 namespace Roguelike
 {
     class Program

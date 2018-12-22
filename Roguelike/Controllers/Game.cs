@@ -48,6 +48,7 @@ namespace Roguelike.Controllers
             isPlaying = true;
             GameMessage.NewMessageOccured += OnNewMessageOccured;
 
+            
             while (isPlaying)
             {
                 if (DateTime.Now.Millisecond % 500 == 0)
@@ -55,6 +56,13 @@ namespace Roguelike.Controllers
                     ShowMap();
                 }
             }
+            /*
+             * That way we can alter console input. Use later to change how the refreshing machine works.
+             * 
+            ShowMap();
+            Console.SetCursorPosition(0, 0);
+            Console.Write("0");
+            */
         }
 
         public void ShowMap()
