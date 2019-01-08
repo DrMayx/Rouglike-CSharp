@@ -7,11 +7,23 @@ namespace Roguelike.Controllers
 {
     public class Movement
     {
+        public delegate void MoveEvent(Position target);
+        public delegate void TouchEvent();
+        public event MoveEvent PlayerMoved;
+        public event MoveEvent PlayerAttacked;
+        public event TouchEvent NeedRefresh;
+        public event TouchEvent ItemTouched;
+
+
         public void Move(int x, int y)
         {
+
             int xPos = Game.PlayerRef.Position.X + x;
             int yPos = Game.PlayerRef.Position.Y + y;
+            int oldPlayerPosX = int.Parse(Game.PlayerRef.Position.X.ToString());
+            int oldPlayerPosY = int.Parse(Game.PlayerRef.Position.Y.ToString());
             Position pos = new Position(xPos, yPos);
+            Position previousPos = new Position(oldPlayerPosX, oldPlayerPosY);
 
             if (PositionIsValid(xPos,yPos))
             {
@@ -21,8 +33,10 @@ namespace Roguelike.Controllers
                     if (chest != null && chest.IsOpened)
                     {
                         chest.Touch();
+                        ItemTouched?.Invoke();
                     }
                     chest.Interact(pos);
+                    NeedRefresh?.Invoke();
                 }
                 else if (Map.MapTiles[yPos][xPos] is NextLevelTile)
                 {
@@ -51,13 +65,14 @@ namespace Roguelike.Controllers
             }
 
             MonsterAttackOnPlayerProximity(yPos, xPos);
+            PlayerMoved?.Invoke(previousPos);
         }
 
         private void LoadNewMap()
         {
             MonsterController.ClearMonsters();
             MapGenerator.GenerateMap();
-
+            NeedRefresh?.Invoke();
         }
 
         private void MonsterAttackOnPlayerProximity(int y, int x)
@@ -134,7 +149,12 @@ namespace Roguelike.Controllers
             int yPos = Game.PlayerRef.Position.Y + y;
             int xPos = Game.PlayerRef.Position.X + x;
 
-            if(Map.MapTiles[yPos][xPos] is EmptySpaceTile)
+            int oldPlayerPosX = int.Parse(Game.PlayerRef.Position.X.ToString());
+            int oldPlayerPosY = int.Parse(Game.PlayerRef.Position.Y.ToString());
+            Position previousPos = new Position(oldPlayerPosX, oldPlayerPosY);
+
+
+            if (Map.MapTiles[yPos][xPos] is EmptySpaceTile)
             {
                 return;
             }
@@ -154,6 +174,8 @@ namespace Roguelike.Controllers
                 }
                 MonsterAttackOnPlayerProximity(yPos, xPos);
             }
+
+            PlayerAttacked?.Invoke(new Position(xPos, yPos));
         }
     }
 }

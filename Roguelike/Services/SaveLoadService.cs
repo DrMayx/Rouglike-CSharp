@@ -44,7 +44,13 @@ namespace Roguelike.Services
             {
                 return null;
             }
-            reader = new StreamReader("save.rlgs");
+            try
+            {
+                reader = new StreamReader("save.rlgs");
+            }catch(Exception)
+            {
+                return null;
+            }
             string data = reader.ReadLine();
             reader.Close();
             string[] decrypted = Decrypt(data).Split('|');

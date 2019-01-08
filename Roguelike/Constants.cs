@@ -9,6 +9,7 @@ namespace Roguelike
         public const int RightMargin = 26;
         public const int MapWidth = 49;
         public const int MapHeight = 22;
+        public const int WindowWidth = 120;
 
         //Player starting position
         public static readonly Position PlayerStartingPosition = new Position(1, 1);

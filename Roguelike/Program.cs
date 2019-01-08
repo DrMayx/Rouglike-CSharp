@@ -12,14 +12,20 @@ using Roguelike.Models;
 // przerwa 13:44 - 13:50                // Added treasure chests
 // przerwa 14:10 - 19.11.2018 5:00      // Added basic ui for score, lives and monster killed statistics
 // przerwa 7:20 - 21.11.2018  4:20      // Added monsters - weak medium and strong, added player damage statistic, 
-                                        // Added colors for monsters and player, added continue option, added killed monsters counter
+//                                      // Added colors for monsters and player, added continue option, added killed monsters 
+//                                      // counter
 // przerwa 4:41 - 4:45                  // Added GameMessage; Fix error with thread disappearing on game exit
-// przerwa 6:25 - 23.11.2018 3:30       // Added not yet well working monster attacking player on sight; Added game finishing on players death
-// przerwa 4:00 - 5:20                  // Fixed monster attack on sight, added bonus lifes providing additional lives through the gameplay
+// przerwa 6:25 - 23.11.2018 3:30       // Added not yet well working monster attacking player on sight; Added game finishing on 
+//                                      // players death
+// przerwa 4:00 - 5:20                  // Fixed monster attack on sight, added bonus lifes providing additional lives through the 
+//                                      // gameplay
 // przerwa 5:25 - 13:00                 // Added messages on monster hit, on treasure chest open and on bonus life picked up
 // przerwa 19:00 - 7.01.2019 7:10       // REFACTOR - whole game made to use tiles instead if characters
-// przerwa 8:24 -                       // Added persistance. player statistics are encrypted and saved on disk when player exits a game
-
+// przerwa 8:24 -  4:30                 // Added persistance. player statistics are encrypted and saved on disk when player exits 
+//                                      // a game
+// przerwa 6:33 -                       // OFFICIALLY VERSION 0.1 BETA ! 
+//                                      // bettered framerate, fixed message system, resolved some concurrency issues with saving 
+//                                      // fixed saves not disappearing after player died.
 namespace Roguelike
 {
     class Program
@@ -56,6 +62,7 @@ namespace Roguelike
                 DeleteMenu(sysMenu, SC_CLOSE, MF_BYCOMMAND);
             }
 
+
             bool userAtMenu = true;
             while (userAtMenu)
             {
@@ -89,6 +96,7 @@ namespace Roguelike
                 player = SaveLoadService.Load();
             }
             bool atMenu = true;
+            Console.Clear();
             while (atMenu)
             {
                 Console.Clear();
@@ -111,19 +119,6 @@ namespace Roguelike
                         }
                         break;
                     case ConsoleKey.D9:
-                        if(player == null)
-                        {
-                            return false;
-                        }
-
-                        if (!player.IsAlive)
-                        {
-                            SaveLoadService.RemoveSaveFile();
-                        }
-                        else
-                        {
-                            SaveLoadService.Save(player);
-                        }
                         return false;
                     case ConsoleKey.D0:
                         ShowDebugInfo();

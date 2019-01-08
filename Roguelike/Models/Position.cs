@@ -35,5 +35,10 @@
         {
             return base.GetHashCode();
         }
+
+        public bool IsValid()
+        {
+            return this.X >= 0 && this.Y >= 0;
+        }
     }
 }

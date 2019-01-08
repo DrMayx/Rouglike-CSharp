@@ -8,13 +8,14 @@ namespace Roguelike.Models
     {
         public delegate void MessageHamdler(string[] message, int numberOfLines);
         public static event MessageHamdler NewMessageOccured;
+        public delegate void ErrorHandler(string message);
+        public static event ErrorHandler NewErrorOccured;
 
         public static void SendMessage(string message)
         {
             string[] messages = message.Split("\n");
             int lines = messages.Length;
             NewMessageOccured?.Invoke(messages, lines);
-
         }
     }
 }

@@ -45,45 +45,59 @@ namespace Roguelike.Controllers
             inputListener.StartListening();
             PlayerRef.PlayerDied += OnPlayerDied;
             movement = new Movement();
+            movement.PlayerMoved += ShowMap;
+            movement.PlayerAttacked += ShowMap;
+            movement.NeedRefresh += PrintMap;
             isPlaying = true;
             GameMessage.NewMessageOccured += OnNewMessageOccured;
 
-            
-            while (isPlaying)
-            {
-                if (DateTime.Now.Millisecond % 500 == 0)
-                {
-                    ShowMap();
-                }
-            }
-            /*
-             * That way we can alter console input. Use later to change how the refreshing machine works.
-             * 
-            ShowMap();
-            Console.SetCursorPosition(0, 0);
-            Console.Write("0");
-            */
+            PrintMap();
         }
 
-        public void ShowMap()
+        public void ShowMap(Position targetPosition)
+        {
+            if (PlayerRef.IsAlive)
+            {
+                if (targetPosition.IsValid())
+                {
+                    Console.SetCursorPosition(PlayerRef.Position.X, PlayerRef.Position.Y);
+                    Map.MapTiles[PlayerRef.Position.Y][PlayerRef.Position.X].DrawCharacter();
+                    Console.SetCursorPosition(targetPosition.X, targetPosition.Y);
+                    Map.MapTiles[targetPosition.Y][targetPosition.X].DrawCharacter();
+                }
+
+                Console.SetCursorPosition(Constants.MapWidth, 2);
+                PrintUI(2);
+                Console.SetCursorPosition(Constants.MapWidth, 4);
+                PrintUI(4);
+                Console.SetCursorPosition(Constants.MapWidth, 6);
+                PrintUI(6);
+                HandleMessages();
+
+                Console.SetCursorPosition(0, Constants.MapHeight);
+            }
+        }
+
+        public void PrintMap()
         {
             if (!isPlaying) { return; }
             Console.Clear();
             for (int rowIdx = 0; rowIdx < Map.MapTiles.Length; rowIdx++)
             {
-                for(int colIdx = 0; colIdx < Map.MapTiles[rowIdx].Length; colIdx++)
+                for (int colIdx = 0; colIdx < Map.MapTiles[rowIdx].Length; colIdx++)
                 {
                     try
                     {
-                        if (colIdx == Map.MapTiles[rowIdx].Length-1)
+                        if (colIdx == Map.MapTiles[rowIdx].Length - 1)
                         {
                             PrintUI(rowIdx);
                         }
                         else
                         {
-                            DrawCharacter(rowIdx,colIdx);
+                            DrawCharacter(rowIdx, colIdx);
                         }
-                    }catch(ThreadInterruptedException e)
+                    }
+                    catch (ThreadInterruptedException e)
                     {
                         ShowError(e);
                         return;
@@ -122,41 +136,53 @@ namespace Roguelike.Controllers
             switch (rowIdx)
             {
                 case 2:
-                    Console.Write("\t\t\tScore: " + PlayerRef.Score + "\n");
+                    Console.Write("\t\t\tScore: " + PlayerRef.Score + "\t\n");
                     break;
                 case 4:
-                    Console.Write("\t\t\tLifes: " + PlayerRef.Lifes + "\n");
+                    Console.Write("\t\t\tLifes: " + PlayerRef.Lifes + "\t\n");
                     break;
                 case 6:
-                    Console.Write("\t\t\tMonsters killed: " + PlayerRef.MonstersKilled + "\n");
+                    Console.Write("\t\t\tMonsters killed: " + PlayerRef.MonstersKilled + "\t\n");
                     break;
                 default:
-                    PrintGameMessage(rowIdx);
+                    Console.Write("\n");
                     break;
             }
         }
 
-        private void PrintGameMessage(int row)
+        public void HandleMessages()
         {
-            if (_hasMoved)
+            if (_messages == null)
             {
-                _lines = 0;
-                _messages = null;
+                ClearMessageArea();
+                return;
             }
+            int currentRow = 8;
+            for(int i = 0; i < _messages.Length; i++)
+            {
+                Console.SetCursorPosition(Constants.MapWidth-1, currentRow + i);
+                Console.Write(" \t\t\t" + _messages[i] + "\n");
+            }
+            _messages = null;
+        }
 
-            int currentRow = row - 8;
-            if (_lines > 0 && currentRow >= 0 && currentRow < _messages.Length)
+        public void ClearMessageArea()
+        {
+            for (int currentRow = 8; currentRow < Constants.MapHeight; currentRow++)
             {
-                Console.Write("\t\t\t" + _messages[currentRow] + "\n");
-            }
-            else
-            {
+                Console.SetCursorPosition(Constants.MapWidth - 1, currentRow);
+
+                for (int currentCol = Constants.MapWidth -1; currentCol < Constants.WindowWidth-1; currentCol++)
+                {
+                    Console.Write(" ");
+                }
                 Console.Write("\n");
             }
         }
 
         public void OnPlayerDied()
         {
+            SaveLoadService.RemoveSaveFile();
             Console.Clear();
             Console.WriteLine("You Died!");
             GameStop();
