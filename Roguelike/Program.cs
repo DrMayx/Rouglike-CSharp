@@ -23,7 +23,7 @@ using Roguelike.Models;
 // przerwa 19:00 - 7.01.2019 7:10       // REFACTOR - whole game made to use tiles instead if characters
 // przerwa 8:24 -  4:30                 // Added persistance. player statistics are encrypted and saved on disk when player exits 
 //                                      // a game
-// przerwa 6:33 -                       // OFFICIALLY VERSION 0.1 ALPHA ! 
+// przerwa 6:33 - 7:00                  // OFFICIALLY VERSION 0.1 ALPHA ! 
 //                                      // bettered framerate, fixed message system, resolved some concurrency issues with saving 
 //                                      // fixed saves not disappearing after player died.
 namespace Roguelike
@@ -130,12 +130,15 @@ namespace Roguelike
 
         private static void ShowDebugInfo()
         {
+            // Do not remove this section
+            // Debug indicator Start
+            Console.WriteLine("Debugging mode. Exit by pressing enter.");
+            string command = Console.ReadLine();
+            // Debug indicator End
+
+
             // Show info for debuging.
             // write debug code here with comments what it checks \/
-
-
-            // Don't remove this statement it is for clear reading purposes;
-            Console.ReadLine();
         }
     }
 }

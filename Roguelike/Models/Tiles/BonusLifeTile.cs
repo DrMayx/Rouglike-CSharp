@@ -27,9 +27,14 @@ namespace Roguelike.Models.Tiles
 
         public void Interact(Position pos)
         {
-            Game.PlayerRef.Lifes += this.value; // Todo fix player event
+            Game.PlayerRef.AddLifes(this.value);
             string properLifeString = this.value == 1 ? "life" : "lifes";
             GameMessage.SendMessage("INFO : You picked up " + this.value + " bonus " + properLifeString);
+        }
+
+        public static void ClearBonuses()
+        {
+            Bonuses.Clear();
         }
     }
 }

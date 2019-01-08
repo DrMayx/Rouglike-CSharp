@@ -10,6 +10,10 @@ namespace Roguelike
         public const int MapWidth = 49;
         public const int MapHeight = 22;
         public const int WindowWidth = 120;
+        public const int MessageAreaStartRow = 8;
+        public const int MessageAreaHeight = 4;
+        public const int QuestAreaStartRow = 14;
+        public const int QuestAreaHeight = 5;
 
         //Player starting position
         public static readonly Position PlayerStartingPosition = new Position(1, 1);
@@ -28,6 +32,7 @@ namespace Roguelike
         public const int TreasureChestProbabilitor = 32;
         public const int BonusLifeProbabilitor = 16;
         public const int NextLevelProbabilitor = 1;
+        public const int QuestGiverProbabilitor = 2;
 
         // Element textures
         public const char WallChar = '#';
@@ -43,6 +48,7 @@ namespace Roguelike
         public const char MonsterStrongChar = 'X';
         public const char BonusLifeChar = 'O';
         public const char NextLevelChar = '&';
+        public const char QuestGiverChar = '?';
 
         // Element colors
         public const ConsoleColor PlayerColor = ConsoleColor.Green;
@@ -50,5 +56,6 @@ namespace Roguelike
         public const ConsoleColor StrongMonsterColor = ConsoleColor.Red;
         public const ConsoleColor BonusLifeColor = ConsoleColor.Yellow;
         public const ConsoleColor NextLevelTileColor = ConsoleColor.Magenta;
+        public const ConsoleColor QuestGiverColor = ConsoleColor.Cyan;
     }
 }

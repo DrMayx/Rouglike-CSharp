@@ -1,4 +1,5 @@
-﻿using Roguelike.Models.Tiles;
+﻿using Roguelike.Controllers;
+using Roguelike.Models.Tiles;
 using System;
 
 namespace Roguelike.Models
@@ -9,12 +10,15 @@ namespace Roguelike.Models
         public delegate void PlayerDeathHandler();
         public static event PlayerActionHandler CauseDamage;
         public event PlayerDeathHandler PlayerDied;
+        public delegate void QuestEvent(Quest quest);
+        public event QuestEvent QuestUpdated;
 
         public int Score;
         public int Lifes;
         public int MonstersKilled;
         private int attackPower;
         public Position Position;
+        public Quest CurrentQuest;
 
         public bool IsAlive
         {
@@ -27,23 +31,13 @@ namespace Roguelike.Models
 
         public static PlayerTile CreateNewPlayer()
         {
-            Instance = new PlayerTile();
-            return Instance;
+            return LoadPlayer(0, 10, 0);
         }
 
         public static PlayerTile LoadPlayer(int score, int lifes, int monsters)
         {
             Instance = new PlayerTile(score, lifes, monsters);
             return Instance;
-        }
-
-        private PlayerTile()
-        {
-            this.Score = 0;
-            this.Lifes = 10;
-            this.MonstersKilled = 0;
-            this.attackPower = 1;
-            this.Position = new Position(1, 1);
         }
 
         private PlayerTile(int score, int lifes, int monsters)
@@ -53,6 +47,54 @@ namespace Roguelike.Models
             this.MonstersKilled = monsters;
             this.attackPower = 1;
             this.Position = new Position(1, 1);
+            Game.QuestControlActivated += OnQuestControlActivated;
+        }
+
+        public void AddLifes(int value)
+        {
+            if(CurrentQuest != null && CurrentQuest.Type == Quest.QuestType.CollectLives)
+            {
+                CurrentQuest.Progress += 1;
+                QuestUpdated?.Invoke(this.CurrentQuest);
+
+                if(CurrentQuest.IsCompleted())
+                {
+                    this.Score += this.CurrentQuest.Reward;
+                    this.CurrentQuest = null;
+                }
+            }
+            this.Lifes += value;
+        }
+
+        public void ExecuteAnyButtonClickedOperations()
+        {
+            if(CurrentQuest == null || CurrentQuest.IsCompleted())
+            {
+                CurrentQuest = null;
+                QuestUpdated?.Invoke(null);
+            }
+        }
+
+        private void OnQuestControlActivated(bool isAccepted)
+        {
+            QuestGiver questGiver = QuestGiver.Quests.Find(q => q.IsTouched);
+            if(questGiver == null)
+            {
+                return;
+            }
+            else 
+            {
+                if (isAccepted)
+                {
+                    GameMessage.SendMessage("ACCEPTED !");
+                    this.CurrentQuest = questGiver.OwnQuest;
+                    QuestUpdated?.Invoke(this.CurrentQuest);
+                }
+                else
+                {
+                    GameMessage.SendMessage("DECLINED !");
+                }
+            }
         }
 
         public void Attack(Position pos)
@@ -75,5 +117,7 @@ namespace Roguelike.Models
             Console.Write(Constants.PlayerChar);
             Console.ResetColor();
         }
+
+
     }
 }

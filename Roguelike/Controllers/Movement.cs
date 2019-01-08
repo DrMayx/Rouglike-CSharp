@@ -42,6 +42,11 @@ namespace Roguelike.Controllers
                 {
                     LoadNewMap();
                 }
+                else if (Map.MapTiles[yPos][xPos] is QuestGiver)
+                {
+                    QuestGiver quest = QuestGiver.Quests.Find(q => q.Position == pos);
+                    quest.Interact(pos);
+                }
                 else
                 {
                     if (Map.MapTiles[yPos][xPos] is BonusLifeTile)
@@ -70,6 +75,8 @@ namespace Roguelike.Controllers
 
         private void LoadNewMap()
         {
+            QuestGiver.ClearQuests();
+            BonusLifeTile.ClearBonuses();
             MonsterController.ClearMonsters();
             MapGenerator.GenerateMap();
             NeedRefresh?.Invoke();

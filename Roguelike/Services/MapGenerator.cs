@@ -11,10 +11,12 @@ namespace Roguelike.Services
         private static List<char> characters = GenerateProbabilityList();
         private static Random random = new Random();
         private static bool nextMapTileGenerated;
+        private static bool questGiverTileGenerated;
 
         public static void GenerateMap()
         {
             nextMapTileGenerated = false;
+            questGiverTileGenerated = false;
             Map.CreateMap();
             Map.MapTiles[1][1] = Game.PlayerRef;
             Game.PlayerRef.Position = Constants.PlayerStartingPosition;
@@ -134,6 +136,15 @@ namespace Roguelike.Services
                 case Constants.UnbreakableWallChar:
                     tile = new UnbreakableWallTile(position);
                     break;
+                case Constants.QuestGiverChar:
+                    if (questGiverTileGenerated)
+                    {
+                        x -= 1;
+                        return;
+                    }
+                    tile = new QuestGiver(position);
+                    questGiverTileGenerated = true;
+                    break;
             }
             Map.MapTiles[y][x] = tile;
         }
@@ -180,6 +191,11 @@ namespace Roguelike.Services
             for (int i = 0; i < Constants.NextLevelProbabilitor; i++)
             {
                 currentProbabilityList.Add(Constants.NextLevelChar);
+            }
+
+            for (int i = 0; i < Constants.QuestGiverProbabilitor; i++)
+            {
+                currentProbabilityList.Add(Constants.QuestGiverChar);
             }
 
             return currentProbabilityList;

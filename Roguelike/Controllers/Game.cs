@@ -10,6 +10,8 @@ namespace Roguelike.Controllers
     {
         public delegate void GameHandler();
         public event GameHandler GameFinished;
+        public delegate void QuestControl(bool ifAccpted);
+        public static event QuestControl QuestControlActivated;
 
         public static PlayerTile PlayerRef;
         private Thread GameThread;
@@ -44,6 +46,7 @@ namespace Roguelike.Controllers
             inputListener.ButtonClicked += OnButtonClicked;
             inputListener.StartListening();
             PlayerRef.PlayerDied += OnPlayerDied;
+            PlayerRef.QuestUpdated += OnQuestUpdated;
             movement = new Movement();
             movement.PlayerMoved += ShowMap;
             movement.PlayerAttacked += ShowMap;
@@ -104,6 +107,7 @@ namespace Roguelike.Controllers
                     }
                 }
             }
+            HandleQuestArea(PlayerRef.CurrentQuest);
         }
 
         public static void ShowError(Exception e)
@@ -152,31 +156,89 @@ namespace Roguelike.Controllers
 
         public void HandleMessages()
         {
+            ClearMessageArea();
+            _messages = _hasMoved ? null : _messages;
+
             if (_messages == null)
             {
-                ClearMessageArea();
                 return;
             }
-            int currentRow = 8;
+
             for(int i = 0; i < _messages.Length; i++)
             {
-                Console.SetCursorPosition(Constants.MapWidth-1, currentRow + i);
+                Console.SetCursorPosition(Constants.MapWidth-1, Constants.MessageAreaStartRow + i);
                 Console.Write(" \t\t\t" + _messages[i] + "\n");
             }
-            _messages = null;
         }
 
         public void ClearMessageArea()
         {
-            for (int currentRow = 8; currentRow < Constants.MapHeight; currentRow++)
+            for (int currentRow = 0; currentRow < Constants.MessageAreaHeight; currentRow++)
             {
-                Console.SetCursorPosition(Constants.MapWidth - 1, currentRow);
+                Console.SetCursorPosition(Constants.MapWidth - 1, Constants.MessageAreaStartRow + currentRow);
 
                 for (int currentCol = Constants.MapWidth -1; currentCol < Constants.WindowWidth-1; currentCol++)
                 {
                     Console.Write(" ");
                 }
                 Console.Write("\n");
+            }
+        }
+
+        public void ClearQuestArea()
+        {
+            for (int currentRow = 0; currentRow < Constants.QuestAreaHeight; currentRow++)
+            {
+                Console.SetCursorPosition(Constants.MapWidth - 1, Constants.QuestAreaStartRow + currentRow);
+
+                for (int currentCol = Constants.MapWidth - 1; currentCol < Constants.WindowWidth - 1; currentCol++)
+                {
+                    Console.Write(" ");
+                }
+                Console.Write("\n");
+            }
+        }
+
+        public void HandleQuestArea(Quest quest)
+        {
+            if (quest == null)
+            {
+                return;
+            }
+
+            Console.SetCursorPosition(Constants.MapWidth - 1, Constants.QuestAreaStartRow);
+            Console.Write("\t\t\t________QUEST________");
+            Console.SetCursorPosition(Constants.MapWidth - 1, Constants.QuestAreaStartRow + 2);
+            Console.Write("\t\t\tType: " + quest.Type);
+            Console.SetCursorPosition(Constants.MapWidth - 1, Constants.QuestAreaStartRow + 3);
+            Console.Write("\t\t\tProgress: " + quest.Progress + "/" + quest.Value);
+            Console.SetCursorPosition(Constants.MapWidth - 1, Constants.QuestAreaStartRow + 4);
+            Console.Write("\t\t\tReward: " + quest.Reward);
+            Console.SetCursorPosition(0, Constants.MapHeight);
+        }
+
+        public void PrintQuestCompletedMessage(Quest quest)
+        {
+            Console.SetCursorPosition(Constants.MapWidth - 1, Constants.QuestAreaStartRow);
+            Console.Write("\t\t\t\tQUEST FINISHED!");
+            Console.SetCursorPosition(Constants.MapWidth - 1, Constants.QuestAreaStartRow + 2);
+            Console.Write($"\t\t\tYou are rewarded with {quest.Reward} points!");
+        }
+
+        public void OnQuestUpdated(Quest quest)
+        {
+            if(quest == null)
+            {
+                PrintMap();
+                return;
+            }
+            if(quest.Progress == quest.Value)
+            {
+                ClearQuestArea();
+                PrintQuestCompletedMessage(quest);
+            }
+            else{
+                HandleQuestArea(quest);
             }
         }
 
@@ -193,6 +255,7 @@ namespace Roguelike.Controllers
             _hasMoved = false;
             _lines = lines;
             _messages = messages;
+            HandleMessages();
         }
 
         public void OnButtonClicked(ConsoleKeyInfo button)
@@ -256,6 +319,12 @@ namespace Roguelike.Controllers
                     break;
                 case ConsoleKey.Spacebar:
                     isAttacking = true;
+                    break;
+                case ConsoleKey.O:
+                    QuestControlActivated?.Invoke(true);
+                    break;
+                case ConsoleKey.P:
+                    QuestControlActivated?.Invoke(false);
                     break;
             }
         }
