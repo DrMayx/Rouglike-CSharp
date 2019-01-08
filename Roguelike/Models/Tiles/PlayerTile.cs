@@ -31,11 +31,26 @@ namespace Roguelike.Models
             return Instance;
         }
 
+        public static PlayerTile LoadPlayer(int score, int lifes, int monsters)
+        {
+            Instance = new PlayerTile(score, lifes, monsters);
+            return Instance;
+        }
+
         private PlayerTile()
         {
             this.Score = 0;
             this.Lifes = 10;
             this.MonstersKilled = 0;
+            this.attackPower = 1;
+            this.Position = new Position(1, 1);
+        }
+
+        private PlayerTile(int score, int lifes, int monsters)
+        {
+            this.Score = score;
+            this.Lifes = lifes;
+            this.MonstersKilled = monsters;
             this.attackPower = 1;
             this.Position = new Position(1, 1);
         }

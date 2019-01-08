@@ -185,6 +185,7 @@ namespace Roguelike.Controllers
             {
                 case ConsoleKey.Escape:
                     Console.Clear();
+                    SaveLoadService.Save(PlayerRef);
                     GameStop();
                     break;
                 case ConsoleKey.A:
