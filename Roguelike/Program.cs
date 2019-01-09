@@ -3,29 +3,9 @@ using System.Runtime.InteropServices;
 using Roguelike.Controllers;
 using Roguelike.Services;
 using Roguelike.Models;
+using System.Collections.Generic;
+using System.Threading;
 
-// started 3:35 14.11.2018              // Started project
-// przerwa 3:52 - 4:10                  // Added basic random map generation
-// przerwa 5:30 - 15.11.2018 2:22       // Added movement
-// przerwa 4:08 - 15:20                 // debugging session - multithreading issues
-// przerwa 16:03 - 18.11.2018 13:07     // Added basic attack - now only walls, Added unbreakable walls, improved map generation
-// przerwa 13:44 - 13:50                // Added treasure chests
-// przerwa 14:10 - 19.11.2018 5:00      // Added basic ui for score, lives and monster killed statistics
-// przerwa 7:20 - 21.11.2018  4:20      // Added monsters - weak medium and strong, added player damage statistic, 
-//                                      // Added colors for monsters and player, added continue option, added killed monsters 
-//                                      // counter
-// przerwa 4:41 - 4:45                  // Added GameMessage; Fix error with thread disappearing on game exit
-// przerwa 6:25 - 23.11.2018 3:30       // Added not yet well working monster attacking player on sight; Added game finishing on 
-//                                      // players death
-// przerwa 4:00 - 5:20                  // Fixed monster attack on sight, added bonus lifes providing additional lives through the 
-//                                      // gameplay
-// przerwa 5:25 - 13:00                 // Added messages on monster hit, on treasure chest open and on bonus life picked up
-// przerwa 19:00 - 7.01.2019 7:10       // REFACTOR - whole game made to use tiles instead if characters
-// przerwa 8:24 -  4:30                 // Added persistance. player statistics are encrypted and saved on disk when player exits 
-//                                      // a game
-// przerwa 6:33 - 7:00                  // OFFICIALLY VERSION 0.1 ALPHA ! 
-//                                      // bettered framerate, fixed message system, resolved some concurrency issues with saving 
-//                                      // fixed saves not disappearing after player died.
 namespace Roguelike
 {
     class Program
@@ -49,6 +29,7 @@ namespace Roguelike
 
         private static Game game = null;
         private static PlayerTile player = null;
+        public static List<Thread> threads = new List<Thread>();
 
         static void Main(string[] args)
         {
@@ -102,9 +83,9 @@ namespace Roguelike
                 Console.Clear();
                 bool continueCondition = player != null && player.IsAlive;
                 string continueOption = continueCondition ? "\n[2]Continue" : "";
-                Console.WriteLine($"Welcome to Rougelike by DrMayx!\n\n" +
-                    $"Close game only from main menu.\n" +
-                    $"Game saves automatically on closing." +
+                Console.WriteLine("Welcome to Rougelike by DrMayx!\n\n" +
+                    "Close game only from main menu.\n" +
+                    "Game saves automatically on closing." +
                     $"\n\n[1]Start new Game{continueOption}\n[9]Exit");
 
                 switch (Console.ReadKey().Key)
@@ -132,13 +113,30 @@ namespace Roguelike
         {
             // Do not remove this section
             // Debug indicator Start
+            bool isCommand = false;
             Console.WriteLine("Debugging mode. Exit by pressing enter.");
             string command = Console.ReadLine();
             // Debug indicator End
 
-
             // Show info for debuging.
             // write debug code here with comments what it checks \/
+            do
+            {
+                switch (command)
+                {
+                    case "st":
+                        isCommand = true;
+                        int i = 0;
+                        foreach (Thread t in threads)
+                        {
+                            Console.WriteLine(i++ + t.Name + "\t\t" + t.IsAlive);
+                        }
+                        break;
+                    default:
+                        return;
+                }
+                command = Console.ReadLine();
+            } while (isCommand);
         }
     }
 }

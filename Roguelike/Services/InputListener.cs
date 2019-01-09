@@ -26,6 +26,7 @@ namespace Roguelike.Services
             });
 
             listenerThread.Name = "Input listener Thread";
+            Program.threads.Add(listenerThread);
             listenerThread.Start();
         }
 
@@ -33,6 +34,7 @@ namespace Roguelike.Services
         {
             this.listenerThread?.Interrupt();
             this.isListening = false;
+            listenerThread = null;
         }
     }
 }

@@ -30,7 +30,14 @@ namespace Roguelike.Services
 
             data += save.MonstersKilled.ToString() + "|";
             data += save.Lifes.ToString() + "|";
-            data += save.Score.ToString();
+            data += save.Score.ToString() + "|";
+            if (save.CurrentQuest != null)
+            {
+                data += (int)save.CurrentQuest.Type + "|"; ;
+                data += save.CurrentQuest.Progress + "|"; ;
+                data += save.CurrentQuest.Value + "|"; ;
+                data += save.CurrentQuest.Reward;
+            }
             string encrypted = Encrypt(data);
 
             writer.Write(encrypted);
@@ -53,11 +60,29 @@ namespace Roguelike.Services
             }
             string data = reader.ReadLine();
             reader.Close();
-            string[] decrypted = Decrypt(data).Split('|');
+            string[] decrypted = new string[1];
+            try
+            {
+                decrypted = Decrypt(data).Split('|');
+            }
+            catch (ArgumentNullException e)
+            {
+                File.Delete("save.rlgs");
+                ErrorDisplayService.ShowError(e, "An error occured with loading your GameSave. It is probably corrupted.\nSorry, You have to start a new game :(", true);
+                return null;
+            }
+            Quest currentQuest = null;
+            if (decrypted.Length >= 7)
+            {
+                currentQuest = new Quest(int.Parse(decrypted[3]), int.Parse(decrypted[4]),
+                                            int.Parse(decrypted[5]), int.Parse(decrypted[6]));
+            }
+
             PlayerTile newPlayer = PlayerTile.LoadPlayer(
                 int.Parse(decrypted[2]),
                 int.Parse(decrypted[1]),
-                int.Parse(decrypted[0]));
+                int.Parse(decrypted[0]),
+                currentQuest);
             return newPlayer;
         }
 

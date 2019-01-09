@@ -36,6 +36,7 @@ namespace Roguelike.Controllers
             GameThread = new Thread(Start);
             GameThread.Name = "Game thread";
             inputListener = new InputListener();
+            Program.threads.Add(GameThread);
             GameThread.Start();
         }
 
@@ -47,6 +48,7 @@ namespace Roguelike.Controllers
             inputListener.StartListening();
             PlayerRef.PlayerDied += OnPlayerDied;
             PlayerRef.QuestUpdated += OnQuestUpdated;
+            PlayerRef.NeedsRefresh += PrintMap;
             movement = new Movement();
             movement.PlayerMoved += ShowMap;
             movement.PlayerAttacked += ShowMap;
@@ -102,23 +104,14 @@ namespace Roguelike.Controllers
                     }
                     catch (ThreadInterruptedException e)
                     {
-                        ShowError(e);
+                        IsError = true;
+                        Game.Instance.isPlaying = false;
+                        ErrorDisplayService.ShowError(e);
                         return;
                     }
                 }
             }
             HandleQuestArea(PlayerRef.CurrentQuest);
-        }
-
-        public static void ShowError(Exception e)
-        {
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.BackgroundColor = ConsoleColor.White;
-            Console.WriteLine("An error occured. But you can continue playing.\nFor debugging info read error message below, else just press Enter and play!\n\n");
-            Console.WriteLine(e);
-            Console.ResetColor();
-            IsError = true;
-            Game.Instance.isPlaying = false;
         }
 
         private void DrawCharacter(int rowIdx, int colIdx)
@@ -268,6 +261,7 @@ namespace Roguelike.Controllers
                 inputListener.StopListening();
                 GameThread.Interrupt();
                 MonsterController.RefreshingEnabled = false;
+                GameThread = null;
                 return;
             }
             switch (button.Key)
@@ -319,12 +313,16 @@ namespace Roguelike.Controllers
                     break;
                 case ConsoleKey.Spacebar:
                     isAttacking = true;
+                    Console.Write("\b");
                     break;
                 case ConsoleKey.O:
                     QuestControlActivated?.Invoke(true);
                     break;
                 case ConsoleKey.P:
                     QuestControlActivated?.Invoke(false);
+                    break;
+                default:
+                    Console.Write("\b");
                     break;
             }
         }
@@ -339,6 +337,7 @@ namespace Roguelike.Controllers
             Console.ReadKey();
             GameFinished?.Invoke();
             GameThread.Interrupt();
+            GameThread = null;
         }
     }
 }

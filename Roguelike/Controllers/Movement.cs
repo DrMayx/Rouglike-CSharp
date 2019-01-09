@@ -109,7 +109,7 @@ namespace Roguelike.Controllers
                 }
                 catch (ArgumentNullException e)
                 {
-                    Game.ShowError(e);
+                    ErrorDisplayService.ShowError(e);
                     return;
                 }
             }
@@ -180,6 +180,10 @@ namespace Roguelike.Controllers
                     Game.PlayerRef.Attack(attackPos);
                 }
                 MonsterAttackOnPlayerProximity(yPos, xPos);
+            }
+            else
+            {
+                return;
             }
 
             PlayerAttacked?.Invoke(new Position(xPos, yPos));

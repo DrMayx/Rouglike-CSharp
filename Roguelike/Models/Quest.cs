@@ -25,6 +25,14 @@ namespace Roguelike.Models
             this.Progress = 0;
         }
 
+        public Quest(int type, int progress, int value, int reward)
+        {
+            this.Type = (QuestType) type;
+            this.Progress = progress;
+            this.Value = value;
+            this.Reward = reward;
+        }
+
         private void SetQuestType()
         {
             QuestType type;

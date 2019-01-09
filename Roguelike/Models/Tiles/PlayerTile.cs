@@ -8,10 +8,13 @@ namespace Roguelike.Models
     {
         public delegate void PlayerActionHandler(Position position, int damage);
         public delegate void PlayerDeathHandler();
+        public delegate void QuestEvent(Quest quest);
+        public delegate void NeedsRefreshHandler();
+
         public static event PlayerActionHandler CauseDamage;
         public event PlayerDeathHandler PlayerDied;
-        public delegate void QuestEvent(Quest quest);
         public event QuestEvent QuestUpdated;
+        public event NeedsRefreshHandler NeedsRefresh;
 
         public int Score;
         public int Lifes;
@@ -31,12 +34,13 @@ namespace Roguelike.Models
 
         public static PlayerTile CreateNewPlayer()
         {
-            return LoadPlayer(0, 10, 0);
+            return LoadPlayer(0, 10, 0, null);
         }
 
-        public static PlayerTile LoadPlayer(int score, int lifes, int monsters)
+        public static PlayerTile LoadPlayer(int score, int lifes, int monsters, Quest currentQuest)
         {
             Instance = new PlayerTile(score, lifes, monsters);
+            Instance.CurrentQuest = currentQuest;
             return Instance;
         }
 
@@ -77,24 +81,24 @@ namespace Roguelike.Models
 
         private void OnQuestControlActivated(bool isAccepted)
         {
+            Console.Write("\b");
             QuestGiver questGiver = QuestGiver.Quests.Find(q => q.IsTouched);
-            if(questGiver == null)
+            if (questGiver == null)
             {
                 return;
             }
-            else 
+
+            if (isAccepted)
             {
-                if (isAccepted)
-                {
-                    GameMessage.SendMessage("ACCEPTED !");
-                    this.CurrentQuest = questGiver.OwnQuest;
-                    QuestUpdated?.Invoke(this.CurrentQuest);
-                }
-                else
-                {
-                    GameMessage.SendMessage("DECLINED !");
-                }
+                GameMessage.SendMessage("ACCEPTED !");
+                this.CurrentQuest = questGiver.OwnQuest;
+                QuestUpdated?.Invoke(this.CurrentQuest);
             }
+            else
+            {
+                GameMessage.SendMessage("DECLINED !");
+            }
+            NeedsRefresh?.Invoke();
         }
 
         public void Attack(Position pos)

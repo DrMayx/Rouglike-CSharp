@@ -54,7 +54,14 @@ namespace Roguelike.Models.Tiles
 
         public void Interact(Position pos)
         {
-            GameMessage.SendMessage($"NEW QUEST!\n{this.OwnQuest.Type}\n[O] Accept\n[P] Decline");
+            if (this.OwnQuest.IsCompleted())
+            {
+                GameMessage.SendMessage($"Thank You for help! I will never forget it!");
+            }
+            else
+            {
+                GameMessage.SendMessage($"NEW QUEST!\n{this.OwnQuest.Type}\n[O] Accept\n[P] Decline");
+            }
         }
 
         public static void ClearQuests()

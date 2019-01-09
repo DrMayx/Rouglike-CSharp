@@ -41,14 +41,31 @@ namespace Roguelike.Models.Tiles
 
         public void DrawCharacter()
         {
-            Console.Write(this.isLeftDrawn 
-                ? this.IsOpened
-                    ? Constants.OpenedChestRightChar
-                    : Constants.TreasureRightChar
-                : this.IsOpened
-                    ? Constants.OpenedChestLeftChar
-                    : Constants.TreasureLeftChar);
+            char properCharacter;
+            if (this.isLeftDrawn)
+            {
+                if (this.IsOpened)
+                {
+                    properCharacter = Constants.OpenedChestRightChar;
+                }
+                else
+                {
+                    properCharacter = Constants.TreasureRightChar;
+                }
+            }
+            else
+            {
+                if (this.IsOpened)
+                {
+                    properCharacter = Constants.OpenedChestLeftChar;
+                }
+                else
+                {
+                    properCharacter = Constants.TreasureLeftChar;
+                }
+            }
             this.isLeftDrawn = !this.isLeftDrawn;
+            Console.Write(properCharacter);
         }
     }
 }

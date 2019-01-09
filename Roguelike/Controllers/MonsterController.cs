@@ -14,6 +14,7 @@ namespace Roguelike.Controllers
             MonsterThread = new Thread(Update);
             MonsterThread.Name = "Monster update thread";
             RefreshingEnabled = true;
+            Program.threads.Add(MonsterThread);
             MonsterThread.Start();
         }
 
@@ -38,7 +39,6 @@ namespace Roguelike.Controllers
         {
             RefreshingEnabled = false;
             MonsterThread?.Interrupt();
-            MonsterThread = null;
             AbstractMonster.Monsters.Clear();
         }
 
