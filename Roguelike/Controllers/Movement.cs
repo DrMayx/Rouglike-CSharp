@@ -7,13 +7,20 @@ namespace Roguelike.Controllers
 {
     public class Movement
     {
+        public delegate void QuestItemInteractedEventHandler(IInteractable item);
         public delegate void MoveEvent(Position target);
         public delegate void TouchEvent();
+
         public event MoveEvent PlayerMoved;
         public event MoveEvent PlayerAttacked;
         public event TouchEvent NeedRefresh;
         public event TouchEvent ItemTouched;
+        public static event QuestItemInteractedEventHandler QuestItemInteracted;
 
+        public Movement()
+        {
+            AbstractMonster.MonsterDied += OnMonsterDied;
+        }
 
         public void Move(int x, int y)
         {
@@ -37,6 +44,7 @@ namespace Roguelike.Controllers
                     }
                     chest.Interact(pos);
                     NeedRefresh?.Invoke();
+                    QuestItemInteracted?.Invoke(chest);
                 }
                 else if (Map.MapTiles[yPos][xPos] is NextLevelTile)
                 {
@@ -54,6 +62,7 @@ namespace Roguelike.Controllers
                         Position futurePos = new Position(pos.X, pos.Y);
                         BonusLifeTile bonus = BonusLifeTile.Bonuses.Find(b => b.Position == futurePos);
                         bonus.Interact(pos);
+                        QuestItemInteracted?.Invoke(bonus);
                     }
                     Map.MapTiles[yPos][xPos] = Game.PlayerRef;
                     Map.MapTiles[Game.PlayerRef.Position.Y][Game.PlayerRef.Position.X] = new EmptySpaceTile();
@@ -187,6 +196,16 @@ namespace Roguelike.Controllers
             }
 
             PlayerAttacked?.Invoke(new Position(xPos, yPos));
+        }
+
+        public static void OnMonsterDied(AbstractMonster monster)
+        {
+            QuestItemInteracted?.Invoke(monster);
+        }
+
+        public void ClearDependencies()
+        {
+            AbstractMonster.MonsterDied -= OnMonsterDied;
         }
     }
 }

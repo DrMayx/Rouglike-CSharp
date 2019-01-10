@@ -5,6 +5,9 @@ namespace Roguelike.Models.Tiles
 {
     public abstract class AbstractMonster : TouchableTile, ITile, IInteractable
     {
+        public delegate void MonsterDiedEventHandler(AbstractMonster monster);
+        public static event MonsterDiedEventHandler MonsterDied;
+
         public static List<AbstractMonster> Monsters = new List<AbstractMonster>();
         private new string itemName = "Monster";
         public int Power;
@@ -26,7 +29,8 @@ namespace Roguelike.Models.Tiles
         {
             Map.MapTiles[Position.Y][Position.X] = new EmptySpaceTile();
             Game.PlayerRef.Score += this.Power;
-            Game.PlayerRef.MonstersKilled++;
+            Game.PlayerRef.AddMonsterKilled();
+            MonsterDied?.Invoke(this);
             Monsters.Remove(this);
         }
 

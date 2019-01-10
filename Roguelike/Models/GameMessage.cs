@@ -7,9 +7,8 @@ namespace Roguelike.Models
     public class GameMessage
     {
         public delegate void MessageHamdler(string[] message, int numberOfLines);
+
         public static event MessageHamdler NewMessageOccured;
-        public delegate void ErrorHandler(string message);
-        public static event ErrorHandler NewErrorOccured;
 
         public static void SendMessage(string message)
         {

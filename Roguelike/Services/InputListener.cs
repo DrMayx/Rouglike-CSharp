@@ -9,6 +9,7 @@ namespace Roguelike.Services
         public delegate void dgButtonClicked(ConsoleKeyInfo button);
         public event dgButtonClicked ButtonClicked;
 
+        private static int counter = 0;
         private Thread listenerThread;
         private bool isListening = true;
 
@@ -25,16 +26,16 @@ namespace Roguelike.Services
                 }
             });
 
-            listenerThread.Name = "Input listener Thread";
+            listenerThread.Name = "Input listener Thread " + counter++;
             Program.threads.Add(listenerThread);
             listenerThread.Start();
         }
 
         public void StopListening()
         {
-            this.listenerThread?.Interrupt();
             this.isListening = false;
             listenerThread = null;
+            this.listenerThread?.Abort();
         }
     }
 }

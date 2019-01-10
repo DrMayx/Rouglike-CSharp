@@ -20,11 +20,12 @@ namespace Roguelike.Services
             Console.WriteLine("An error occured. But you can continue playing.\nFor debugging info read error message below, else just press Enter and play!\n\n");
             Console.WriteLine(additional + "\n\n");
             Console.WriteLine(e);
+            Console.ResetColor();
+
             if (pause)
             {
                 Console.ReadLine();
             }
-            Console.ResetColor();
         }
     }
 }

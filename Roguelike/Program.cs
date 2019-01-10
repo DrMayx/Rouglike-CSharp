@@ -68,6 +68,11 @@ namespace Roguelike
         public static void OnGameFinished()
         {
             game = null;
+            for(int i = 0; i < threads.Count; i++)
+            {
+                threads[i] = null;
+            }
+            threads.Clear();
         }
 
         public static bool ShowMenu()
@@ -127,9 +132,14 @@ namespace Roguelike
                     case "st":
                         isCommand = true;
                         int i = 0;
+                        Console.WriteLine("ID\tName\t\tIsAlive\tIsNull");
+                        string name;
+                        bool isAlive;
                         foreach (Thread t in threads)
                         {
-                            Console.WriteLine(i++ + t.Name + "\t\t" + t.IsAlive);
+                            name = t != null ? t.Name : "Dead thread";
+                            isAlive = t != null ? t.IsAlive : false;
+                            Console.WriteLine(i++ + ". " + name + "\t\t" + isAlive + "\t" + (t == null));
                         }
                         break;
                     default:

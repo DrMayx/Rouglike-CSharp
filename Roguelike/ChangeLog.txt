@@ -21,5 +21,8 @@
 //                                      // bettered framerate, fixed message system, resolved some concurrency issues with saving 
 //                                      // fixed saves not disappearing after player died.
 // przerwa 9:20 - 9.01.2019 16:41       // bugfixing
-// przerwa 19:25 -						// Quest improvements, optimizations , treasure chest fixes, error display moved to service
+// przerwa 19:25 -10.01.2019 5:55		// Quest improvements, optimizations , treasure chest fixes, error display moved to service
 //										// Quests are now saved
+// przerwa 6:51 - 7:10					// Preparation for more than one questtype to be given, Multithreading issue solving
+// przerwa 8:32 -						// Debugging of quest - some issue with refreshing quest state; fixed some multithreading 
+//										// problems with threads not dying and not unsubscribing events

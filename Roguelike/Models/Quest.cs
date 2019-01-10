@@ -47,7 +47,7 @@ namespace Roguelike.Models
                     break;
                 case 1:
                     type = QuestType.FindTreasure;
-                    reward = random.Next(5, 21);
+                    reward = random.Next(500,1001);
                     break;
                 case 2:
                     type = QuestType.CollectLives;
@@ -64,8 +64,6 @@ namespace Roguelike.Models
             {
                 this.Reward = 1337;
             }
-            // Debug
-            this.Type = QuestType.CollectLives;
         }
 
         public bool IsCompleted()

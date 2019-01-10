@@ -7,14 +7,13 @@ namespace Roguelike.Models
     public class PlayerTile : ITile
     {
         public delegate void PlayerActionHandler(Position position, int damage);
-        public delegate void PlayerDeathHandler();
-        public delegate void QuestEvent(Quest quest);
-        public delegate void NeedsRefreshHandler();
+        public delegate void GenericEvemtHandler();
+        public delegate void QuestEventHandler(Quest quest);
 
         public static event PlayerActionHandler CauseDamage;
-        public event PlayerDeathHandler PlayerDied;
-        public event QuestEvent QuestUpdated;
-        public event NeedsRefreshHandler NeedsRefresh;
+        public event GenericEvemtHandler PlayerDied;
+        public event QuestEventHandler QuestUpdated;
+        public event GenericEvemtHandler NeedsRefresh;
 
         public int Score;
         public int Lifes;
@@ -56,17 +55,6 @@ namespace Roguelike.Models
 
         public void AddLifes(int value)
         {
-            if(CurrentQuest != null && CurrentQuest.Type == Quest.QuestType.CollectLives)
-            {
-                CurrentQuest.Progress += 1;
-                QuestUpdated?.Invoke(this.CurrentQuest);
-
-                if(CurrentQuest.IsCompleted())
-                {
-                    this.Score += this.CurrentQuest.Reward;
-                    this.CurrentQuest = null;
-                }
-            }
             this.Lifes += value;
         }
 
@@ -77,6 +65,12 @@ namespace Roguelike.Models
                 CurrentQuest = null;
                 QuestUpdated?.Invoke(null);
             }
+        }
+
+        public void CompleteCurrentQuest()
+        {
+            this.Score += this.CurrentQuest.Reward;
+            this.CurrentQuest = null;
         }
 
         private void OnQuestControlActivated(bool isAccepted)
@@ -106,6 +100,11 @@ namespace Roguelike.Models
             CauseDamage?.Invoke(pos, attackPower);
         }
 
+        public void AddMonsterKilled()
+        {
+            this.MonstersKilled++;
+        }
+
         public void ApplyDamage(int damage)
         {
             Lifes -= damage;
@@ -121,7 +120,5 @@ namespace Roguelike.Models
             Console.Write(Constants.PlayerChar);
             Console.ResetColor();
         }
-
-
     }
 }

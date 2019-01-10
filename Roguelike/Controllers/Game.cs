@@ -18,6 +18,7 @@ namespace Roguelike.Controllers
         private InputListener inputListener;
         public volatile bool isPlaying;
         private Movement movement;
+        private QuestService questService;
         private bool isAttacking;
         public static bool IsError;
         private bool _hasMoved;
@@ -34,7 +35,7 @@ namespace Roguelike.Controllers
         public void Run()
         {
             GameThread = new Thread(Start);
-            GameThread.Name = "Game thread";
+            GameThread.Name = "Game Main Loop thread";
             inputListener = new InputListener();
             Program.threads.Add(GameThread);
             GameThread.Start();
@@ -53,6 +54,8 @@ namespace Roguelike.Controllers
             movement.PlayerMoved += ShowMap;
             movement.PlayerAttacked += ShowMap;
             movement.NeedRefresh += PrintMap;
+            questService = new QuestService();
+            questService.QuestUpdated += OnQuestUpdated;
             isPlaying = true;
             GameMessage.NewMessageOccured += OnNewMessageOccured;
 
@@ -256,12 +259,7 @@ namespace Roguelike.Controllers
             _hasMoved = true;
             if (IsError)
             {
-                isPlaying = false;
-                GameFinished?.Invoke();
-                inputListener.StopListening();
-                GameThread.Interrupt();
-                MonsterController.RefreshingEnabled = false;
-                GameThread = null;
+                StopGameFunctionalities();
                 return;
             }
             switch (button.Key)
@@ -331,13 +329,42 @@ namespace Roguelike.Controllers
         {
             Console.WriteLine("Your score: " + PlayerRef.Score);
             Console.WriteLine("Press any key to continue...");
-            inputListener.StopListening();
-            isPlaying = false;
-            MonsterController.ClearMonsters();
             Console.ReadKey();
-            GameFinished?.Invoke();
-            GameThread.Interrupt();
+            StopGameFunctionalities();
+        }
+
+        private void StopGameFunctionalities()
+        {
+            UnsubscribeListeners();
+            isPlaying = false;
+            try
+            {
+                inputListener.StopListening();
+            }catch (ThreadAbortException)
+            {
+                // It is ok that has to happen.
+            }
             GameThread = null;
+            MonsterController.ClearMonsters();
+            MonsterController.RefreshingEnabled = false;
+            questService = null;
+            movement.ClearDependencies();
+            movement = null;
+            inputListener = null;
+            GameFinished?.Invoke();
+        }
+
+        private void UnsubscribeListeners()
+        {
+            inputListener.ButtonClicked -= OnButtonClicked;
+            PlayerRef.PlayerDied -= OnPlayerDied;
+            PlayerRef.QuestUpdated -= OnQuestUpdated;
+            PlayerRef.NeedsRefresh -= PrintMap;
+            movement.PlayerMoved -= ShowMap;
+            movement.PlayerAttacked -= ShowMap;
+            movement.NeedRefresh -= PrintMap;
+            questService.QuestUpdated -= OnQuestUpdated;
+            GameMessage.NewMessageOccured -= OnNewMessageOccured;
         }
     }
 }
