@@ -25,4 +25,4 @@
 //										// Quests are now saved
 // przerwa 6:51 - 7:10					// Preparation for more than one questtype to be given, Multithreading issue solving
 // przerwa 8:32 -						// Debugging of quest - some issue with refreshing quest state; fixed some multithreading 
-//										// problems with threads not dying and not unsubscribing events
+//										// problems with threads not dying and not unsubscribing events.
